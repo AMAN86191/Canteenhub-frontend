@@ -7,13 +7,13 @@ import OrderStatusBadge from '../../components/OrderStatusBadge';
 import { formatCurrency, formatDateTime } from '../../utils/format';
 
 const CARDS = [
-  ['totalUsers', 'Total Users', '👥'],
-  ['totalProducts', 'Total Products', '🍔'],
-  ['totalCategories', 'Categories', '🗂️'],
-  ['totalOrders', 'Total Orders', '🧾'],
-  ['pendingOrders', 'Pending Orders', '⏳'],
-  ['preparingOrders', 'Preparing', '👨‍🍳'],
-  ['completedOrders', 'Completed Orders', '✅'],
+  ['totalUsers', 'Total Users', '👥', 'blue'],
+  ['totalProducts', 'Total Products', '🍔', 'green'],
+  ['totalCategories', 'Categories', '🗂️', 'violet'],
+  ['totalOrders', 'Total Orders', '🧾', 'cyan'],
+  ['pendingOrders', 'Pending Orders', '⏳', 'amber'],
+  ['preparingOrders', 'Preparing', '👨‍🍳', 'violet'],
+  ['completedOrders', 'Completed Orders', '✅', 'green'],
 ];
 
 export default function Dashboard() {
@@ -55,8 +55,8 @@ export default function Dashboard() {
             <small>from completed orders only</small>
           </div>
         </div>
-        {CARDS.map(([key, label, icon]) => (
-          <div key={key} className="stat-card">
+        {CARDS.map(([key, label, icon, accent]) => (
+          <div key={key} className={`stat-card ${accent}`}>
             <span className="stat-icon">{icon}</span>
             <div>
               <p className="stat-label">{label}</p>
@@ -68,7 +68,9 @@ export default function Dashboard() {
 
       <section className="card" style={{ marginTop: 24 }}>
         <div className="card-head-row">
-          <h3>Recent Orders</h3>
+          <h3>
+            Recent Orders <span className="count-badge">{recentOrders.length}</span>
+          </h3>
           <Link to="/admin/orders" className="link-arrow">
             View all →
           </Link>

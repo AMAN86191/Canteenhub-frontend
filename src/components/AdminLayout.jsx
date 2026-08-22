@@ -17,15 +17,18 @@ export default function AdminLayout({ children }) {
   return (
     <div className="admin-layout">
       <aside className={`admin-sidebar ${open ? 'open' : ''}`}>
-        <Link to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-icon">🍜</span>
+        <Link to="/" className="sidebar-brand" onClick={() => setOpen(false)}>
+          <span className="sidebar-logo">🍜</span>
           <span>
-            Canteen<span className="brand-accent">Hub</span>
+            <span className="sidebar-brand-name">
+              Canteen<em>Hub</em>
+            </span>
+            <span className="sidebar-brand-sub">Admin Panel</span>
           </span>
         </Link>
-        <p className="sidebar-tag">Admin Panel</p>
 
         <nav className="sidebar-nav">
+          <p className="sidebar-label">Main menu</p>
           {LINKS.map((link) => (
             <NavLink
               key={link.to}
@@ -34,13 +37,21 @@ export default function AdminLayout({ children }) {
               className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
               onClick={() => setOpen(false)}
             >
-              <span>{link.icon}</span> {link.label}
+              <span className="sidebar-link-icon">{link.icon}</span>
+              {link.label}
             </NavLink>
           ))}
         </nav>
 
         <div className="sidebar-footer">
-          <Link to="/menu" className="btn btn-outline btn-sm sidebar-site-btn" onClick={() => setOpen(false)}>
+          <div className="sidebar-user-card">
+            <span className="sidebar-avatar">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
+            <span className="sidebar-user-info">
+              <strong>{user?.name}</strong>
+              <small>Administrator</small>
+            </span>
+          </div>
+          <Link to="/menu" className="btn btn-sm sidebar-site-btn" onClick={() => setOpen(false)}>
             🏪 View Site
           </Link>
           <button
@@ -53,7 +64,6 @@ export default function AdminLayout({ children }) {
           >
             Logout
           </button>
-          <p className="sidebar-user">Logged in as {user?.name}</p>
         </div>
       </aside>
 

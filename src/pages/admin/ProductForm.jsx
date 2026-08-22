@@ -352,7 +352,7 @@ export default function ProductForm() {
             <ChoiceEditor
               icon="🎯"
               title="Variants"
-              hint="Customer ek option choose karega. Pehla variant base hota hai. Extra price base par add hoti hai."
+              hint="Different versions of this product - customer picks exactly one. Example: Regular, Medium, Large. The extra price is added on top of the base price."
               list={variants}
               onChange={setVariants}
               maxItems={12}
@@ -361,7 +361,7 @@ export default function ProductForm() {
             <ChoiceEditor
               icon="🧩"
               title="Add-ons"
-              hint="Extras jo customer khud select kar sakta hai (checkbox). Har addon ki price base par judti hai."
+              hint="Optional extras the customer can tick to make it better. Example: Extra Cheese (+₹20). Each selected add-on is added to the total bill."
               list={addons}
               onChange={setAddons}
               maxItems={15}

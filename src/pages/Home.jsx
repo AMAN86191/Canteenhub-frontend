@@ -47,6 +47,20 @@ export default function Home() {
                 Create Free Account
               </Link>
             </div>
+            <div className="hero-stats" aria-label="Why students love CanteenHub">
+              <div className="hero-stat">
+                <strong>0 min</strong>
+                <span>queue waiting</span>
+              </div>
+              <div className="hero-stat">
+                <strong>Live</strong>
+                <span>order tracking</span>
+              </div>
+              <div className="hero-stat">
+                <strong>100%</strong>
+                <span>contactless pickup</span>
+              </div>
+            </div>
           </div>
           <div className="hero-art" aria-hidden="true">
             <span>🍔</span>
@@ -79,7 +93,9 @@ export default function Home() {
 
       <section className="container popular-section">
         <div className="section-head">
-          <h2>Popular Right Now 🔥</h2>
+          <h2>
+            Popular Right Now <span className="count-badge">🔥 Trending</span>
+          </h2>
           <Link to="/menu" className="link-arrow">
             View full menu →
           </Link>

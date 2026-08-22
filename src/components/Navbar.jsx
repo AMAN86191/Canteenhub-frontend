@@ -21,7 +21,7 @@ export default function Navbar() {
     <header className="navbar">
       <div className="container navbar-inner">
         <Link to="/" className="brand" onClick={() => setOpen(false)}>
-          <span className="brand-icon">🍜</span>
+          <span className="brand-logo-tile">🍜</span>
           <span>
             Canteen<span className="brand-accent">Hub</span>
           </span>
