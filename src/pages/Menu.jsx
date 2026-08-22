@@ -4,7 +4,6 @@ import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
 import SearchBar from '../components/SearchBar';
-import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 
 export default function Menu() {
@@ -14,7 +13,6 @@ export default function Menu() {
   const [activeCategory, setActiveCategory] = useState('all');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const { addItem } = useCart();
   const toast = useToast();
 
   // Fetch categories once
@@ -114,14 +112,7 @@ export default function Menu() {
           </p>
           <div className="product-grid">
             {products.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                onAdd={() => {
-                  addItem(product);
-                  toast.success(`${product.name} added to cart!`);
-                }}
-              />
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         </>

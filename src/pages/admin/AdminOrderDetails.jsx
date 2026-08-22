@@ -141,6 +141,17 @@ export default function AdminOrderDetails() {
               />
               <div className="cart-item-info">
                 <h4>{item.name}</h4>
+                {item.variantName && <span className="cart-variant-chip">🎯 {item.variantName}</span>}
+                {item.addons?.length > 0 && (
+                  <div className="cart-addon-list">
+                    {item.addons.map((a) => (
+                      <span key={a.name} className="cart-addon-chip">
+                        + {a.name}
+                        {a.priceDelta > 0 ? ` (₹${a.priceDelta})` : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
                 <span className="muted">{formatCurrency(item.price)} each</span>
               </div>
               <span className="muted">Qty: {item.quantity}</span>

@@ -124,9 +124,13 @@ export default function AdminProducts() {
                 <tr key={product._id}>
                   <td>
                     <div className="cell-product">
-                      <SafeImage src={product.image} alt={product.name} className="thumb" />
+                      <Link to={`/admin/products/${product._id}`} style={{ display: 'contents' }}>
+                        <SafeImage src={product.images?.[0] || product.image} alt={product.name} className="thumb" />
+                      </Link>
                       <div>
-                        <strong>{product.name}</strong>
+                        <strong>
+                          <Link to={`/admin/products/${product._id}`} className="apd-name-link">{product.name}</Link>
+                        </strong>
                         <small className="muted d-block clamp-1">{product.description}</small>
                       </div>
                     </div>

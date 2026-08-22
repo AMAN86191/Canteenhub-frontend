@@ -50,18 +50,34 @@ export default function Cart() {
       <div className="cart-layout">
         <div className="cart-items">
           {items.map((item) => (
-            <div key={item.product} className="cart-item">
+            <div key={item.key} className="cart-item">
               <SafeImage src={item.image} alt={item.name} className="cart-item-img" />
               <div className="cart-item-info">
                 <h4>{item.name}</h4>
-                <span className="muted">{formatCurrency(item.price)} each</span>
+                {item.variantName && <span className="cart-variant-chip">🎯 {item.variantName}</span>}
+                {item.addons?.length > 0 && (
+                  <div className="cart-addon-list">
+                    {item.addons.map((a) => (
+                      <span key={a.name} className="cart-addon-chip">
+                        + {a.name}
+                        {a.priceDelta > 0 ? ` (₹${a.priceDelta})` : ''}
+                      </span>
+                    ))}
+                  </div>
+                )}
+                <span className="muted">
+                  {formatCurrency(item.price)} each
+                  {(item.variantName || item.addons?.length > 0) && item.basePrice !== undefined && item.basePrice !== item.price
+                    ? ` · base ${formatCurrency(item.basePrice)}`
+                    : ''}
+                </span>
               </div>
               <div className="qty-controls" aria-label={`Quantity of ${item.name}`}>
-                <button type="button" onClick={() => decreaseQuantity(item.product)} aria-label="Decrease quantity">
+                <button type="button" onClick={() => decreaseQuantity(item.key)} aria-label="Decrease quantity">
                   −
                 </button>
                 <span>{item.quantity}</span>
-                <button type="button" onClick={() => increaseQuantity(item.product)} aria-label="Increase quantity">
+                <button type="button" onClick={() => increaseQuantity(item.key)} aria-label="Increase quantity">
                   +
                 </button>
               </div>
@@ -69,7 +85,7 @@ export default function Cart() {
               <button
                 type="button"
                 className="icon-btn danger"
-                onClick={() => removeItem(item.product)}
+                onClick={() => removeItem(item.key)}
                 aria-label={`Remove ${item.name}`}
               >
                 🗑️

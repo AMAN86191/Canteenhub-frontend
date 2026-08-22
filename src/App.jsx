@@ -9,6 +9,7 @@ import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Menu from './pages/Menu';
+import ProductDetails from './pages/ProductDetails';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import OrderSuccess from './pages/OrderSuccess';
@@ -19,6 +20,7 @@ import NotFound from './pages/NotFound';
 
 import Dashboard from './pages/admin/Dashboard';
 import AdminLogin from './pages/admin/AdminLogin';
+import AdminProductDetails from './pages/admin/AdminProductDetails';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProductForm from './pages/admin/ProductForm';
 import AdminCategories from './pages/admin/AdminCategories';
@@ -64,6 +66,7 @@ export default function App() {
               <main className="site-main">
                 <Routes>
                   <Route path="/menu" element={<Menu />} />
+                  <Route path="/product/:id" element={<ProductDetails />} />
                   <Route path="/cart" element={<Cart />} />
                   <Route
                     path="/checkout"
@@ -128,6 +131,7 @@ export default function App() {
                   <Route path="products" element={<AdminProducts />} />
                   <Route path="products/add" element={<ProductForm />} />
                   <Route path="products/edit/:id" element={<ProductForm />} />
+                  <Route path="products/:id" element={<AdminProductDetails />} />
                   <Route path="categories" element={<AdminCategories />} />
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="orders/:id" element={<AdminOrderDetails />} />

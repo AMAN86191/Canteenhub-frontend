@@ -51,7 +51,12 @@ export default function Checkout() {
     setPlacing(true);
     try {
       const res = await api.post('/orders', {
-        items: items.map((i) => ({ product: i.product, quantity: i.quantity })),
+        items: items.map((i) => ({
+          product: i.product,
+          quantity: i.quantity,
+          variantName: i.variantName || '',
+          addons: (i.addons || []).map((a) => a.name),
+        })),
         paymentMethod,
       });
       const order = res.data.data.order;
@@ -76,10 +81,18 @@ export default function Checkout() {
           <h3 className="section-title">Your Items ({totalItems})</h3>
           <div className="checkout-items">
             {items.map((item) => (
-              <div key={item.product} className="cart-item">
+              <div key={item.key} className="cart-item">
                 <SafeImage src={item.image} alt={item.name} className="cart-item-img" />
                 <div className="cart-item-info">
                   <h4>{item.name}</h4>
+                  {item.variantName && <span className="cart-variant-chip">🎯 {item.variantName}</span>}
+                  {item.addons?.length > 0 && (
+                    <div className="cart-addon-list">
+                      {item.addons.map((a) => (
+                        <span key={a.name} className="cart-addon-chip">+ {a.name}</span>
+                      ))}
+                    </div>
+                  )}
                   <span className="muted">
                     {formatCurrency(item.price)} × {item.quantity}
                   </span>

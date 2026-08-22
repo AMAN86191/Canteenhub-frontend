@@ -3,13 +3,11 @@ import { useEffect, useState } from 'react';
 import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
-import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
 
 export default function Home() {
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const { addItem } = useCart();
   const toast = useToast();
 
   useEffect(() => {
@@ -91,14 +89,7 @@ export default function Home() {
         ) : (
           <div className="product-grid">
             {products.map((product) => (
-              <ProductCard
-                key={product._id}
-                product={product}
-                onAdd={() => {
-                  addItem(product);
-                  toast.success(`${product.name} added to cart!`);
-                }}
-              />
+              <ProductCard key={product._id} product={product} />
             ))}
           </div>
         )}
