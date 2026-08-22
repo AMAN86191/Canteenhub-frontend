@@ -1,0 +1,70 @@
+import { useState } from 'react';
+import { NavLink, Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext';
+
+const LINKS = [
+  { to: '/admin', label: 'Dashboard', icon: '📊', end: true },
+  { to: '/admin/products', label: 'Products', icon: '🍔' },
+  { to: '/admin/categories', label: 'Categories', icon: '🗂️' },
+  { to: '/admin/orders', label: 'Orders', icon: '🧾' },
+  { to: '/admin/users', label: 'Users', icon: '👥' },
+];
+
+export default function AdminLayout({ children }) {
+  const [open, setOpen] = useState(false);
+  const { user, logout } = useAuth();
+
+  return (
+    <div className="admin-layout">
+      <aside className={`admin-sidebar ${open ? 'open' : ''}`}>
+        <Link to="/" className="brand" onClick={() => setOpen(false)}>
+          <span className="brand-icon">🍜</span>
+          <span>
+            Canteen<span className="brand-accent">Hub</span>
+          </span>
+        </Link>
+        <p className="sidebar-tag">Admin Panel</p>
+
+        <nav className="sidebar-nav">
+          {LINKS.map((link) => (
+            <NavLink
+              key={link.to}
+              to={link.to}
+              end={link.end}
+              className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+              onClick={() => setOpen(false)}
+            >
+              <span>{link.icon}</span> {link.label}
+            </NavLink>
+          ))}
+        </nav>
+
+        <div className="sidebar-footer">
+          <Link to="/menu" className="btn btn-outline btn-sm sidebar-site-btn" onClick={() => setOpen(false)}>
+            🏪 View Site
+          </Link>
+          <button
+            type="button"
+            className="btn btn-danger btn-sm"
+            onClick={() => {
+              setOpen(false);
+              logout();
+            }}
+          >
+            Logout
+          </button>
+          <p className="sidebar-user">Logged in as {user?.name}</p>
+        </div>
+      </aside>
+
+      {open && <div className="sidebar-overlay" onClick={() => setOpen(false)} />}
+
+      <main className="admin-main">
+        <button type="button" className="admin-menu-btn btn btn-outline btn-sm" onClick={() => setOpen(true)}>
+          ☰ Menu
+        </button>
+        {children}
+      </main>
+    </div>
+  );
+}

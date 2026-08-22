@@ -1,0 +1,137 @@
+import { useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import ForgotPasswordModal from '../../components/ForgotPasswordModal';
+
+/**
+ * Dedicated admin login page - standalone, split-screen layout that matches
+ * the site's warm orange theme. No public admin registration: admins come
+ * from the seed script or reset their password via email OTP.
+ */
+export default function AdminLogin() {
+  const { login } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const from = location.state?.from || '/admin';
+
+  const [form, setForm] = useState({ email: '', password: '' });
+  const [showPass, setShowPass] = useState(false);
+  const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [showForgot, setShowForgot] = useState(false);
+
+  async function handleSubmit(e) {
+    e.preventDefault();
+    if (!form.email.trim()) return setError('Email is required.');
+    if (!form.password) return setError('Password is required.');
+    setError('');
+
+    setSubmitting(true);
+    const result = await login(form.email.trim(), form.password);
+    setSubmitting(false);
+
+    if (result.ok && result.user.role === 'admin') {
+      navigate(from, { replace: true });
+    } else if (result.ok) {
+      setError('This account does not have admin access. Use an admin account.');
+    }
+  }
+
+  return (
+    <div className="admin-auth-page">
+      <span className="admin-float admin-float-1" aria-hidden="true">🍔</span>
+      <span className="admin-float admin-float-2" aria-hidden="true">🥤</span>
+      <span className="admin-float admin-float-3" aria-hidden="true">🍕</span>
+
+      <div className="admin-auth-shell">
+        {/* Left - branding panel */}
+        <aside className="admin-auth-brand">
+          <div className="admin-brand-badge">⚡ Admin Panel</div>
+          <div className="admin-brand-logo">
+            <span className="brand-icon">🍜</span>
+            <h1>CanteenHub</h1>
+          </div>
+          <p className="admin-brand-tagline">
+            Control your entire canteen from one beautiful dashboard.
+          </p>
+
+          <ul className="admin-brand-features">
+            <li><span>📦</span> Manage menu, categories &amp; stock</li>
+            <li><span>🧾</span> Track live orders &amp; update status</li>
+            <li><span>👥</span> Monitor customers &amp; insights</li>
+          </ul>
+
+          <p className="admin-brand-foot">CanteenHub · Final Year Project</p>
+        </aside>
+
+        {/* Right - login form */}
+        <main className="admin-auth-form">
+          <h2>Welcome back 👋</h2>
+          <p className="admin-form-sub">Log in to manage your canteen.</p>
+
+          {error && (
+            <div className="admin-auth-error" role="alert">
+              ⚠ {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} noValidate>
+            <div className="form-group">
+              <label htmlFor="admin-email">Admin Email</label>
+              <input
+                id="admin-email"
+                type="email"
+                placeholder="superadmin@gmail.com"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
+                autoComplete="email"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="admin-password">Password</label>
+              <div className="pass-wrap">
+                <input
+                  id="admin-password"
+                  type={showPass ? 'text' : 'password'}
+                  placeholder="••••••••"
+                  value={form.password}
+                  onChange={(e) => setForm({ ...form, password: e.target.value })}
+                  autoComplete="current-password"
+                />
+                <button
+                  type="button"
+                  className="pass-toggle"
+                  onClick={() => setShowPass((s) => !s)}
+                  aria-label={showPass ? 'Hide password' : 'Show password'}
+                >
+                  {showPass ? '🙈' : '👁'}
+                </button>
+              </div>
+            </div>
+
+            <button type="submit" className="btn btn-primary btn-block" disabled={submitting}>
+              {submitting ? 'Signing in...' : 'Sign In to Dashboard'}
+            </button>
+          </form>
+
+          <button type="button" className="btn-link admin-forgot" onClick={() => setShowForgot(true)}>
+            Forgot Password?
+          </button>
+
+          {/* <div className="admin-divider"><span>Demo credentials</span></div>
+
+          <div className="admin-creds-hint">
+            <code>superadmin@gmail.com</code>
+            <span className="hint-sep">/</span>
+            <code>12345678</code>
+          </div> */}
+
+          <Link to="/" className="admin-back-link">← Back to CanteenHub</Link>
+        </main>
+      </div>
+
+      <ForgotPasswordModal open={showForgot} onClose={() => setShowForgot(false)} defaultEmail={form.email} />
+    </div>
+  );
+}
