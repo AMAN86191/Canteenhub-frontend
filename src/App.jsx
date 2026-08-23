@@ -27,6 +27,10 @@ import AdminCategories from './pages/admin/AdminCategories';
 import AdminOrders from './pages/admin/AdminOrders';
 import AdminOrderDetails from './pages/admin/AdminOrderDetails';
 import AdminUsers from './pages/admin/AdminUsers';
+import AdminCanteens from './pages/admin/AdminCanteens';
+import AdminCanteenDetails from './pages/admin/AdminCanteenDetails';
+import AdminColleges from './pages/admin/AdminColleges';
+import AdminProfile from './pages/admin/AdminProfile';
 
 function ScrollToTop() {
   const { pathname } = useLocation();
@@ -136,6 +140,10 @@ export default function App() {
                   <Route path="orders" element={<AdminOrders />} />
                   <Route path="orders/:id" element={<AdminOrderDetails />} />
                   <Route path="users" element={<AdminUsers />} />
+                  <Route path="profile" element={<AdminProfile />} />
+                  <Route path="canteens" element={<AdminCanteens />} />
+                  <Route path="canteens/:id" element={<AdminCanteenDetails />} />
+                  <Route path="colleges" element={<AdminColleges />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AdminLayout>

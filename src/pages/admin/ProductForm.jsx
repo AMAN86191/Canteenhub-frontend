@@ -357,6 +357,7 @@ export default function ProductForm() {
               onChange={setVariants}
               maxItems={12}
             />
+            
 
             <ChoiceEditor
               icon="🧩"

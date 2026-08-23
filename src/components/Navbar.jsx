@@ -44,7 +44,7 @@ export default function Navbar() {
               </NavLink>
             </>
           )}
-          {user?.role === 'admin' && (
+          {['admin', 'superadmin', 'canteen_admin'].includes(user?.role) && (
             <NavLink to="/admin" className={linkClass} onClick={() => setOpen(false)}>
               Admin Panel
             </NavLink>

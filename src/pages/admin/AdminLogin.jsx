@@ -9,7 +9,7 @@ import ForgotPasswordModal from '../../components/ForgotPasswordModal';
  * from the seed script or reset their password via email OTP.
  */
 export default function AdminLogin() {
-  const { login } = useAuth();
+  const { login, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const from = location.state?.from || '/admin';
@@ -17,6 +17,7 @@ export default function AdminLogin() {
   const [form, setForm] = useState({ email: '', password: '' });
   const [showPass, setShowPass] = useState(false);
   const [error, setError] = useState('');
+  const [roleBlocked, setRoleBlocked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
 
@@ -25,15 +26,23 @@ export default function AdminLogin() {
     if (!form.email.trim()) return setError('Email is required.');
     if (!form.password) return setError('Password is required.');
     setError('');
+    setRoleBlocked(false);
 
     setSubmitting(true);
     const result = await login(form.email.trim(), form.password);
     setSubmitting(false);
 
-    if (result.ok && result.user.role === 'admin') {
+    if (result.ok && ['admin', 'superadmin'].includes(result.user.role)) {
       navigate(from, { replace: true });
     } else if (result.ok) {
-      setError('This account does not have admin access. Use an admin account.');
+      // Wrong door: this page is for the platform owner only.
+      await logout(false);
+      setRoleBlocked(true);
+      setError(
+        result.user.role === 'canteen_admin'
+          ? 'This page is for the Super Admin only. Canteen admins log in from the main website.'
+          : 'This account does not have platform access.'
+      );
     }
   }
 
@@ -46,19 +55,19 @@ export default function AdminLogin() {
       <div className="admin-auth-shell">
         {/* Left - branding panel */}
         <aside className="admin-auth-brand">
-          <div className="admin-brand-badge">⚡ Admin Panel</div>
+          <div className="admin-brand-badge">⚡ Super Admin</div>
           <div className="admin-brand-logo">
             <span className="brand-icon">🍜</span>
             <h1>CanteenHub</h1>
           </div>
           <p className="admin-brand-tagline">
-            Control your entire canteen from one beautiful dashboard.
+            Platform control center — colleges, canteens &amp; admins.
           </p>
 
           <ul className="admin-brand-features">
-            <li><span>📦</span> Manage menu, categories &amp; stock</li>
-            <li><span>🧾</span> Track live orders &amp; update status</li>
-            <li><span>👥</span> Monitor customers &amp; insights</li>
+            <li><span>🎓</span> Create &amp; manage colleges</li>
+            <li><span>🏪</span> Onboard canteens &amp; their admins</li>
+            <li><span>📊</span> Monitor every order across the platform</li>
           </ul>
 
           <p className="admin-brand-foot">CanteenHub · Final Year Project</p>
@@ -67,11 +76,16 @@ export default function AdminLogin() {
         {/* Right - login form */}
         <main className="admin-auth-form">
           <h2>Welcome back 👋</h2>
-          <p className="admin-form-sub">Log in to manage your canteen.</p>
+          <p className="admin-form-sub">Super Admin login — canteen admins use the main website.</p>
 
           {error && (
             <div className="admin-auth-error" role="alert">
               ⚠ {error}
+              {roleBlocked && (
+                <Link to="/login" className="admin-error-link" onClick={() => setError('')}>
+                  Go to main website login →
+                </Link>
+              )}
             </div>
           )}
 

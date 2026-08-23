@@ -75,8 +75,32 @@ export default function Profile() {
             </div>
             <div className="kv inline">
               <span className="k">Role</span>
-              <span className={`role-chip ${user?.role}`}>{user?.role === 'admin' ? 'Admin' : 'Student / User'}</span>
+              <span className={`role-chip ${user?.role}`}>
+                {user?.role === 'admin' || user?.role === 'superadmin'
+                  ? 'Super Admin'
+                  : user?.role === 'canteen_admin'
+                    ? 'Canteen Admin'
+                    : 'Student / User'}
+              </span>
             </div>
+
+            {user?.canteen && (
+              <div className="profile-canteen-box">
+                <div className="kv inline">
+                  <span className="k">🏫 Canteen</span>
+                  <strong>{user.canteen.name}</strong>
+                </div>
+                {user.canteen.collegeName && (
+                  <div className="kv inline">
+                    <span className="k">🎓 College</span>
+                    <strong>{user.canteen.collegeName}</strong>
+                  </div>
+                )}
+                <small className="hint">
+                  Set at registration - all your orders go to this canteen.
+                </small>
+              </div>
+            )}
             <button type="submit" className="btn btn-primary" disabled={savingProfile}>
               {savingProfile ? 'Saving...' : 'Save Changes'}
             </button>

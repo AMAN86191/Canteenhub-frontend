@@ -41,6 +41,7 @@ export default function AdminUsers() {
                 <th>#</th>
                 <th>Name</th>
                 <th>Email</th>
+                <th>College / Canteen</th>
                 <th>Role</th>
                 <th>Registered</th>
               </tr>
@@ -54,7 +55,26 @@ export default function AdminUsers() {
                   </td>
                   <td>{user.email}</td>
                   <td>
-                    <span className={`role-chip ${user.role}`}>{user.role === 'admin' ? 'Admin' : 'User'}</span>
+                    {user.canteenId ? (
+                      <>
+                        <span className="muted">{user.canteenId.collegeName || '—'}</span>
+                        {' → '}
+                        <strong>{user.canteenId.name}</strong>
+                      </>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
+                  <td>
+                    <span className={`role-chip ${user.role}`}>
+                      {user.role === 'admin'
+                        ? 'Super Admin'
+                        : user.role === 'superadmin'
+                          ? 'Super Admin'
+                          : user.role === 'canteen_admin'
+                            ? 'Canteen Admin'
+                            : 'User'}
+                    </span>
                   </td>
                   <td className="muted">{formatDateTime(user.createdAt)}</td>
                 </tr>

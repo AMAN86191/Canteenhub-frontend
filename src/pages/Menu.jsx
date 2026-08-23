@@ -1,12 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import api, { getErrorMessage } from '../services/api';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 import EmptyState from '../components/EmptyState';
 import SearchBar from '../components/SearchBar';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Menu() {
+  const { user } = useAuth();
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState('');
@@ -15,11 +18,19 @@ export default function Menu() {
   const [error, setError] = useState('');
   const toast = useToast();
 
+  // The canteen this viewer is allowed to browse.
+  // Students are permanently linked to their college canteen at signup.
+  const canteenId = user ? user.canteen?._id || user.canteenId : null;
+  const canteenName = user?.canteen?.name;
+
   // Fetch categories once
   useEffect(() => {
+    if (!user) return;
     (async () => {
       try {
-        const res = await api.get('/categories');
+        const params = new URLSearchParams();
+        if (user.role === 'user' && canteenId) params.set('canteenId', canteenId);
+        const res = await api.get(`/categories?${params.toString()}`);
         setCategories(res.data.data.categories);
       } catch (err) {
         toast.error(getErrorMessage(err, 'Could not load categories.'));
@@ -30,11 +41,13 @@ export default function Menu() {
 
   // Fetch products whenever search/category changes
   useEffect(() => {
+    if (!user) return;
     let cancelled = false;
     setLoading(true);
     const params = new URLSearchParams();
     if (search.trim()) params.set('search', search.trim());
     if (activeCategory !== 'all') params.set('category', activeCategory);
+    if (user.role === 'user' && canteenId) params.set('canteenId', canteenId);
 
     (async () => {
       try {
@@ -59,12 +72,36 @@ export default function Menu() {
     return map;
   }, [categories]);
 
+  // Guests must log in before they can browse any canteen's food.
+  if (!user) {
+    return (
+      <div className="container page">
+        <div className="page-head">
+          <h1>Food Menu 🍽️</h1>
+        </div>
+        <EmptyState
+          icon="🔐"
+          title="Log in to browse the menu"
+          message="Each student sees the menu of their own college canteen. Log in or create a free account to continue."
+          actionLabel="Log In"
+          actionTo="/login"
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="container page">
       <div className="page-head">
         <h1>Food Menu 🍽️</h1>
         <p>Freshly made, fairly priced. Pick your favourites!</p>
       </div>
+
+      {canteenName && (
+        <div className="canteen-chip-row" aria-label="Your canteen">
+          🏫 Ordering from <strong>{canteenName}</strong> — your college canteen
+        </div>
+      )}
 
       <div className="menu-controls">
         <SearchBar value={search} onChange={setSearch} placeholder="Search food by name..." />

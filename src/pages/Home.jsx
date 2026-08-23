@@ -4,16 +4,29 @@ import api from '../services/api';
 import ProductCard from '../components/ProductCard';
 import Loader from '../components/Loader';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 
 export default function Home() {
+  const { user, initializing } = useAuth();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const toast = useToast();
 
+  // Students are locked to their own college canteen - the backend
+  // enforces this too; we just pass the canteen along for clarity.
+  const canteenId = user ? user.canteen?._id || user.canteenId : null;
+
   useEffect(() => {
+    if (initializing) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
     (async () => {
       try {
-        const res = await api.get('/products?availableOnly=true');
+        const params = new URLSearchParams({ availableOnly: 'true' });
+        if (user.role === 'user' && canteenId) params.set('canteenId', canteenId);
+        const res = await api.get(`/products?${params.toString()}`);
         setProducts(res.data.data.products.slice(0, 8));
       } catch {
         toast.error('Could not load featured items.');
@@ -22,7 +35,7 @@ export default function Home() {
       }
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user, initializing]);
 
   return (
     <div className="home">
@@ -102,6 +115,25 @@ export default function Home() {
         </div>
         {loading ? (
           <Loader label="Loading tasty items..." />
+        ) : !user ? (
+          <div className="menu-lock-card">
+            <span className="menu-lock-icon">🔐</span>
+            <h3>Menus are canteen-specific</h3>
+            <p>
+              Log in with your college account to browse and order from your own canteen&apos;s
+              fresh menu.
+            </p>
+            <div className="hero-actions" style={{ justifyContent: 'center' }}>
+              <Link to="/login" className="btn btn-primary">
+                Log In
+              </Link>
+              <Link to="/register" className="btn btn-outline">
+                Create Free Account
+              </Link>
+            </div>
+          </div>
+        ) : products.length === 0 ? (
+          <p className="result-count">Your canteen&apos;s menu is being prepared. Check back soon!</p>
         ) : (
           <div className="product-grid">
             {products.map((product) => (

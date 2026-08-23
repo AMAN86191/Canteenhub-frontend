@@ -30,7 +30,7 @@ export default function Footer() {
         <div>
           <p className="footer-col-title">More</p>
           <div className="footer-links">
-            <Link to="/admin/login">Admin Login</Link>
+            <Link to="/admin/login">Super Admin Login</Link>
             <a href="https://github.com" target="_blank" rel="noreferrer">
               GitHub
             </a>

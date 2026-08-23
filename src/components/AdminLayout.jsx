@@ -8,7 +8,25 @@ const LINKS = [
   { to: '/admin/categories', label: 'Categories', icon: '🗂️' },
   { to: '/admin/orders', label: 'Orders', icon: '🧾' },
   { to: '/admin/users', label: 'Users', icon: '👥' },
+  { to: '/admin/profile', label: 'My Profile', icon: '🪪' },
 ];
+
+// Only the platform owner sees canteen management.
+const SUPER_LINKS = [
+  { to: '/admin/canteens', label: 'Canteens', icon: '🏪' },
+  { to: '/admin/colleges', label: 'Colleges', icon: '🎓' },
+];
+
+// Legacy accounts keep role "admin" and get full platform access.
+export function isSuperAdminRole(role) {
+  return role === 'superadmin' || role === 'admin';
+}
+
+function roleLabel(role) {
+  if (isSuperAdminRole(role)) return 'Super Admin';
+  if (role === 'canteen_admin') return 'Canteen Admin';
+  return 'Administrator';
+}
 
 export default function AdminLayout({ children }) {
   const [open, setOpen] = useState(false);
@@ -41,6 +59,23 @@ export default function AdminLayout({ children }) {
               {link.label}
             </NavLink>
           ))}
+          {isSuperAdminRole(user?.role) && (
+            <>
+              <p className="sidebar-label">Platform</p>
+              {SUPER_LINKS.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+                  onClick={() => setOpen(false)}
+                >
+                  <span className="sidebar-link-icon">{link.icon}</span>
+                  {link.label}
+                </NavLink>
+              ))}
+            </>
+          )}
         </nav>
 
         <div className="sidebar-footer">
@@ -48,7 +83,7 @@ export default function AdminLayout({ children }) {
             <span className="sidebar-avatar">{(user?.name || 'A').charAt(0).toUpperCase()}</span>
             <span className="sidebar-user-info">
               <strong>{user?.name}</strong>
-              <small>Administrator</small>
+              <small>{roleLabel(user?.role)}</small>
             </span>
           </div>
           <Link to="/menu" className="btn btn-sm sidebar-site-btn" onClick={() => setOpen(false)}>

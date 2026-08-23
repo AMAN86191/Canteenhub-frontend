@@ -12,6 +12,9 @@ export default function ProtectedRoute({ children }) {
   return children;
 }
 
+/** Roles allowed into the admin panel. */
+const ADMIN_ROLES = ['admin', 'superadmin', 'canteen_admin'];
+
 /**
  * Guards the /admin/* tree on its own:
  * - anonymous visitor  -> dedicated /admin/login page
@@ -26,7 +29,7 @@ export function AdminRoute({ children }) {
   if (!user) {
     return <Navigate to="/admin/login" state={{ from: location.pathname }} replace />;
   }
-  if (user.role !== 'admin') return <AccessDenied userName={user.name} />;
+  if (!ADMIN_ROLES.includes(user.role)) return <AccessDenied userName={user.name} />;
   return children;
 }
 

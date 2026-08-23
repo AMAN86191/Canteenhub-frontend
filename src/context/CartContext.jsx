@@ -1,4 +1,5 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { useAuth } from './AuthContext';
 
 const CartContext = createContext(null);
 const STORAGE_KEY = 'ch_cart';
@@ -47,6 +48,30 @@ function loadCart() {
 
 export function CartProvider({ children }) {
   const [items, setItems] = useState(loadCart);
+  const { user } = useAuth();
+
+  // A cart belongs to exactly one identity. When the logged-in user changes
+  // (login / logout / role switch in the same browser), wipe the cart so one
+  // person's items can never leak into another account's checkout.
+  const userId = user ? String(user._id || user.id || '') : '';
+  const prevUserIdRef = useRef(userId);
+  useEffect(() => {
+    if (prevUserIdRef.current !== userId) {
+      prevUserIdRef.current = userId;
+      setItems([]);
+    }
+  }, [userId]);
+
+  // Students can only order from their own college canteen. If the logged-in
+  // user's canteen changes (login/logout/switch), drop items that don't belong.
+  const myCanteenId = user ? String(user.canteen?._id || user.canteenId || '') : '';
+  useEffect(() => {
+    setItems((prev) => {
+      if (!prev.length) return prev;
+      const kept = prev.filter((i) => !i.canteenId || !myCanteenId || i.canteenId === myCanteenId);
+      return kept.length === prev.length ? prev : kept;
+    });
+  }, [myCanteenId]);
 
   // Persist cart across refreshes
   useEffect(() => {
@@ -88,6 +113,7 @@ export function CartProvider({ children }) {
           quantity: qty,
           variantName,
           addons,
+          canteenId: product.canteenId ? String(product.canteenId) : undefined,
         },
       ];
     });

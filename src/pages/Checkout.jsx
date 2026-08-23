@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useCart } from '../context/CartContext';
 import { useToast } from '../context/ToastContext';
+import { useAuth } from '../context/AuthContext';
 import api, { getErrorMessage } from '../services/api';
 import EmptyState from '../components/EmptyState';
 import { SafeImage } from '../components/ProductCard';
@@ -25,10 +26,16 @@ const PAYMENT_METHODS = [
 
 export default function Checkout() {
   const { items, subtotal, totalItems, clearCart } = useCart();
+  const { user } = useAuth();
   const [paymentMethod, setPaymentMethod] = useState('Cash on Pickup');
   const [placing, setPlacing] = useState(false);
   const navigate = useNavigate();
   const toast = useToast();
+
+  // Orders are always placed at the student's own college canteen.
+  // There is deliberately NO option to change this here.
+  const canteenName = user?.canteen?.name;
+  const canteenCollege = user?.canteen?.collegeName;
 
   if (items.length === 0 && !placing) {
     return (
@@ -78,6 +85,15 @@ export default function Checkout() {
 
       <div className="cart-layout">
         <div>
+          <div className="canteen-lock-card" role="note">
+            <span className="canteen-lock-icon">🏫</span>
+            <div>
+              <strong>{canteenName || 'Your College Canteen'}</strong>
+              {canteenCollege && <small>{canteenCollege}</small>}
+              <p>This order will be placed at your own college canteen - it&apos;s linked to your account.</p>
+            </div>
+          </div>
+
           <h3 className="section-title">Your Items ({totalItems})</h3>
           <div className="checkout-items">
             {items.map((item) => (
