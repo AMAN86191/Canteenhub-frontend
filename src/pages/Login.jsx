@@ -124,12 +124,7 @@ export default function Login() {
             </div>
 
             <div className="form-group">
-              <div className="label-row-between">
-                <label htmlFor="password">Password</label>
-                <button type="button" className="btn-link login-forgot no-pad" onClick={() => setShowForgot(true)}>
-                  Forgot password?
-                </button>
-              </div>
+              <label htmlFor="password">Password</label>
               <div className="input-wrap has-icon has-pw">
                 <span className="input-icon">🔒</span>
                 <input
@@ -150,6 +145,11 @@ export default function Login() {
                 </button>
               </div>
               {errors.password && <span className="field-error">{errors.password}</span>}
+              <div className="forgot-row">
+                <button type="button" className="btn-link no-pad" onClick={() => setShowForgot(true)}>
+                  Forgot password?
+                </button>
+              </div>
             </div>
 
             <button type="submit" className="btn btn-primary btn-block btn-lg" disabled={submitting}>

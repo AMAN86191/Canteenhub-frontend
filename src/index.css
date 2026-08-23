@@ -1833,3 +1833,57 @@ input:focus, textarea:focus, select:focus {
 }
 .admin-error-link { display: block; margin-top: 8px; color: #fff; font-weight: 700; text-decoration: underline; }
 .admin-error-link:hover { opacity: 0.85; }
+
+/* Forgot password below the field, right-aligned */
+.forgot-row { display: flex; justify-content: flex-end; margin-top: 8px; }
+.forgot-row .btn-link { font-size: 0.84rem; font-weight: 600; }
+
+/* Sub-admin email verification (admin login) */
+.admin-verify-box {
+  margin-top: 16px;
+  background: var(--bg);
+  border: 1.5px dashed var(--primary);
+  border-radius: 14px;
+  padding: 16px 18px;
+}
+.admin-verify-box h3 { font-size: 0.98rem; margin-bottom: 4px; }
+.admin-verify-box p { font-size: 0.86rem; color: var(--muted); line-height: 1.5; }
+.admin-verify-form { display: flex; gap: 10px; margin-top: 10px; }
+.admin-verify-form input {
+  flex: 1;
+  letter-spacing: 6px;
+  font-weight: 800;
+  text-align: center;
+}
+.admin-verify-msg {
+  margin-top: 12px;
+  padding: 10px 14px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.admin-verify-msg.ok { background: #dcfce7; color: #15803d; }
+.admin-verify-msg.bad { background: #fee2e2; color: #b91c1c; }
+
+/* Post-create verification notice */
+.create-ok-card { border-left: 4px solid #22c55e; }
+.create-ok-card h3 { display: flex; align-items: center; }
+.create-ok-card .demo-otp-box { margin-bottom: 12px; }
+.create-ok-card .btn { margin-top: 4px; }
+
+.pending-chip {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  background: #fef3c7;
+  color: #b45309;
+}
+.create-form-actions {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  flex-wrap: wrap;
+}

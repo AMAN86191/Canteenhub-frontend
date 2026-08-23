@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import ForgotPasswordModal from '../../components/ForgotPasswordModal';
+import api, { getErrorMessage } from '../../services/api';
 
 /**
  * Dedicated admin login page - standalone, split-screen layout that matches
@@ -21,12 +22,19 @@ export default function AdminLogin() {
   const [submitting, setSubmitting] = useState(false);
   const [showForgot, setShowForgot] = useState(false);
 
+  // First-time verification of a canteen admin account (emailed OTP).
+  const [needVerify, setNeedVerify] = useState(false);
+  const [verifyOtp, setVerifyOtp] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [verifyMsg, setVerifyMsg] = useState(null);
+
   async function handleSubmit(e) {
     e.preventDefault();
     if (!form.email.trim()) return setError('Email is required.');
     if (!form.password) return setError('Password is required.');
     setError('');
     setRoleBlocked(false);
+    setVerifyMsg(null);
 
     setSubmitting(true);
     const result = await login(form.email.trim(), form.password);
@@ -43,6 +51,32 @@ export default function AdminLogin() {
           ? 'This page is for the Super Admin only. Canteen admins log in from the main website.'
           : 'This account does not have platform access.'
       );
+    } else if (result.message && /not verified/i.test(result.message)) {
+      // Canteen admin logging in for the very first time - offer OTP verify.
+      setNeedVerify(true);
+      setError(result.message);
+    }
+  }
+
+  async function handleVerify(e) {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(verifyOtp.trim())) {
+      return setVerifyMsg({ ok: false, text: 'Enter the 6-digit code emailed to you.' });
+    }
+    setVerifying(true);
+    setVerifyMsg(null);
+    try {
+      const res = await api.post('/canteens/verify-admin', {
+        email: form.email.trim(),
+        otp: verifyOtp.trim(),
+      });
+      setVerifyMsg({ ok: true, text: res.data.message });
+      setNeedVerify(false);
+      setVerifyOtp('');
+    } catch (err) {
+      setVerifyMsg({ ok: false, text: getErrorMessage(err, 'Could not verify. Try again.') });
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -128,6 +162,33 @@ export default function AdminLogin() {
               {submitting ? 'Signing in...' : 'Sign In to Dashboard'}
             </button>
           </form>
+
+          {/* First-time verification for canteen admins */}
+          {needVerify && (
+            <div className="admin-verify-box">
+              <h3>🔐 Verify your admin account</h3>
+              <p>
+                We emailed a 6-digit code to <strong>{form.email}</strong>. Enter it below to
+                activate your login.
+              </p>
+              <form onSubmit={handleVerify} className="admin-verify-form">
+                <input
+                  type="text"
+                  inputMode="numeric"
+                  maxLength={6}
+                  placeholder="6-digit code"
+                  value={verifyOtp}
+                  onChange={(e) => setVerifyOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                />
+                <button type="submit" className="btn btn-primary" disabled={verifying}>
+                  {verifying ? 'Verifying...' : 'Verify Account'}
+                </button>
+              </form>
+            </div>
+          )}
+          {verifyMsg && (
+            <div className={`admin-verify-msg ${verifyMsg.ok ? 'ok' : 'bad'}`}>{verifyMsg.text}</div>
+          )}
 
           <button type="button" className="btn-link admin-forgot" onClick={() => setShowForgot(true)}>
             Forgot Password?

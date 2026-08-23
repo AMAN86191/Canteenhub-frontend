@@ -23,6 +23,15 @@ export default function AdminCanteens() {
   const [form, setForm] = useState(EMPTY_FORM);
   const [formErrors, setFormErrors] = useState({});
   const [saving, setSaving] = useState(false);
+  const [createdInfo, setCreatedInfo] = useState(null); // post-create notice
+  // Inline verification right after create (step 2 of the form).
+  const [formStep, setFormStep] = useState('details'); // 'details' | 'otp'
+  const [pendingVerify, setPendingVerify] = useState(null); // { email, canteenName, devOtp }
+  const [otp, setOtp] = useState('');
+  const [verifying, setVerifying] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [otpErr, setOtpErr] = useState('');
+  const [resetTarget, setResetTarget] = useState(null); // password dialog
   const toast = useToast();
 
   async function loadCanteens() {
@@ -68,13 +77,64 @@ export default function AdminCanteens() {
     try {
       const res = await api.post('/canteens', form);
       toast.success(res.data.message);
+      setPendingVerify({
+        email: form.adminEmail,
+        canteenName: res.data.data.canteen?.name || form.name,
+        devOtp: res.data.data?.devOtp || null,
+      });
+      setOtp('');
+      setOtpErr('');
+      setFormStep('otp');
       setForm(EMPTY_FORM);
-      setShowForm(false);
       await loadCanteens();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Could not create canteen.'));
     } finally {
       setSaving(false);
+    }
+  }
+
+  function closeCreateForm() {
+    setShowForm(false);
+    setFormStep('details');
+    setForm(EMPTY_FORM);
+    setFormErrors({});
+    setPendingVerify(null);
+    setOtp('');
+    setOtpErr('');
+  }
+
+  /** Step 2: verify the sub-admin's email right inside the form. */
+  async function handleVerifyCreate(e) {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(otp)) return setOtpErr('Enter the 6-digit code emailed to the sub-admin.');
+    setVerifying(true);
+    setOtpErr('');
+    try {
+      const res = await api.post('/canteens/verify-admin', { email: pendingVerify.email, otp });
+      toast.success(res.data.message);
+      setCreatedInfo({ name: pendingVerify.canteenName, email: pendingVerify.email, verified: true });
+      closeCreateForm();
+      await loadCanteens();
+    } catch (err) {
+      setOtpErr(getErrorMessage(err, 'Could not verify the code.'));
+    } finally {
+      setVerifying(false);
+    }
+  }
+
+  async function handleResendInvite() {
+    if (!pendingVerify) return;
+    setResending(true);
+    setOtpErr('');
+    try {
+      const res = await api.post('/canteens/resend-verify', { email: pendingVerify.email });
+      setPendingVerify((p) => ({ ...p, devOtp: res.data.data?.devOtp || null }));
+      toast.success(res.data.message);
+    } catch (err) {
+      setOtpErr(getErrorMessage(err, 'Could not resend the code.'));
+    } finally {
+      setResending(false);
     }
   }
 
@@ -85,22 +145,6 @@ export default function AdminCanteens() {
       await loadCanteens();
     } catch (err) {
       toast.error(getErrorMessage(err, 'Could not update canteen.'));
-    }
-  }
-
-  async function resetPassword(canteen) {
-    // Simple prompt-based reset (admin panel keeps it lightweight).
-    const newPassword = window.prompt(`New password for ${canteen.name}'s sub-admin:`);
-    if (!newPassword) return;
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters.');
-      return;
-    }
-    try {
-      const res = await api.put(`/canteens/${canteen._id}`, { adminPassword: newPassword });
-      toast.success(res.data.message);
-    } catch (err) {
-      toast.error(getErrorMessage(err, 'Could not reset password.'));
     }
   }
 
@@ -130,17 +174,47 @@ export default function AdminCanteens() {
           <h1>Canteens 🏪</h1>
           <p className="muted">{canteens.length} canteen(s) on the platform</p>
         </div>
-        <button type="button" className="btn btn-primary" onClick={() => setShowForm((v) => !v)}>
+        <button type="button" className="btn btn-primary" onClick={() => (showForm ? closeCreateForm() : setShowForm(true))}>
           {showForm ? '✕ Close' : '+ Add Canteen'}
         </button>
       </div>
 
-      {showForm && (
+      {/* Post-create notice */}
+      {createdInfo && (
+        <div className="card section-card create-ok-card">
+          <h3>✅ “{createdInfo.name}” created</h3>
+          <p className="muted">
+            {createdInfo.verified ? (
+              <>
+                Sub-admin <strong>{createdInfo.email}</strong> is verified and can log in right
+                away from the admin login screen.
+              </>
+            ) : (
+              <>
+                A verification code was emailed to <strong>{createdInfo.email}</strong>. The
+                sub-admin login stays <strong>locked until they verify it once</strong>.
+              </>
+            )}
+          </p>
+          {createdInfo.demoMode && (
+            <div className="demo-otp-box">
+              <strong>Demo mode</strong> (no SMTP configured) — verification code:{' '}
+              <code>{createdInfo.devOtp}</code>
+            </div>
+          )}
+          <button type="button" className="btn btn-outline btn-sm" onClick={() => setCreatedInfo(null)}>
+            Got it
+          </button>
+        </div>
+      )}
+
+      {showForm && formStep === 'details' && (
         <form className="card canteen-form" onSubmit={handleCreate} noValidate>
           <h3>New canteen &amp; its sub-admin</h3>
           <p className="muted">
             Pick the college this canteen belongs to, then create a login for its manager - they
-            will manage only this canteen.
+            will manage only this canteen. A verification code will be emailed to the sub-admin;
+            their account activates only after verifying it.
           </p>
           <div className="form-grid">
             <div className="form-group">
@@ -180,8 +254,61 @@ export default function AdminCanteens() {
             </div>
           </div>
           <button type="submit" className="btn btn-primary" disabled={saving}>
-            {saving ? 'Creating...' : 'Create Canteen'}
+            {saving ? 'Creating...' : 'Create & Send Code'}
           </button>
+        </form>
+      )}
+
+      {/* Step 2: inline email verification for the just-created sub-admin */}
+      {showForm && formStep === 'otp' && pendingVerify && (
+        <form className="card canteen-form" onSubmit={handleVerifyCreate} noValidate>
+          <h3>🔐 Verify sub-admin email</h3>
+          <p className="muted">
+            A 6-digit code was emailed to <strong>{pendingVerify.email}</strong>. Enter it here
+            to activate the login — the code expires in 10 minutes.
+          </p>
+
+          {pendingVerify.devOtp && (
+            <div className="demo-otp-box">
+              <strong>Demo mode</strong> (no SMTP configured) — code: <code>{pendingVerify.devOtp}</code>
+            </div>
+          )}
+          {otpErr && (
+            <span className="field-error" style={{ display: 'block', marginBottom: 10 }}>
+              {otpErr}
+            </span>
+          )}
+
+          <div className="otp-boxes" onClick={() => document.getElementById('canteen-otp-hidden')?.focus()}>
+            {[0, 1, 2, 3, 4, 5].map((i) => (
+              <span key={i} className={`otp-cell ${otp[i] ? 'filled' : ''}`}>
+                {otp[i] || ''}
+              </span>
+            ))}
+            <input
+              id="canteen-otp-hidden"
+              className="otp-hidden-input"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              value={otp}
+              onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              autoFocus
+            />
+          </div>
+
+          <div className="create-form-actions">
+            <button type="submit" className="btn btn-primary" disabled={verifying}>
+              {verifying ? 'Verifying...' : '✓ Verify & Finish'}
+            </button>
+            <button type="button" className="btn-link fp-resend no-pad" onClick={handleResendInvite} disabled={resending}>
+              {resending ? 'Resending...' : "Didn't get the code? Resend"}
+            </button>
+            <button type="button" className="btn-link login-forgot no-pad" onClick={closeCreateForm}>
+              Skip for now
+            </button>
+          </div>
         </form>
       )}
 
@@ -223,6 +350,11 @@ export default function AdminCanteens() {
                     <span className={`role-chip ${canteen.isActive ? 'active-chip' : 'blocked-chip'}`}>
                       {canteen.isActive ? 'Active' : 'Inactive'}
                     </span>
+                    {canteen.pendingVerification && (
+                      <span className="pending-chip" title="Sub-admin has not verified their email yet">
+                        ⏳ Pending
+                      </span>
+                    )}
                   </td>
                   <td>
                     <div className="table-actions">
@@ -239,7 +371,7 @@ export default function AdminCanteens() {
                       <button
                         type="button"
                         className="btn btn-sm btn-outline"
-                        onClick={() => resetPassword(canteen)}
+                        onClick={() => setResetTarget(canteen)}
                       >
                         Reset Password
                       </button>
@@ -258,6 +390,137 @@ export default function AdminCanteens() {
           </table>
         </div>
       )}
+
+      {/* Verified password-change dialog */}
+      {resetTarget && (
+        <ResetPasswordDialog
+          canteen={resetTarget}
+          onClose={() => setResetTarget(null)}
+        />
+      )}
+    </div>
+  );
+}
+
+/**
+ * Two-step, email-verified sub-admin password change:
+ * 1) superadmin enters the new password -> OTP is emailed to the sub-admin
+ * 2) superadmin enters that code (sub-admin shares it) -> password is applied
+ */
+function ResetPasswordDialog({ canteen, onClose }) {
+  const toast = useToast();
+  const [step, setStep] = useState(1);
+  const [newPw, setNewPw] = useState('');
+  const [otp, setOtp] = useState('');
+  const [devOtp, setDevOtp] = useState(null);
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState('');
+
+  async function sendOtp(e) {
+    e.preventDefault();
+    if (newPw.length < 6) return setErr('Password must be at least 6 characters.');
+    setBusy(true);
+    setErr('');
+    try {
+      const res = await api.put(`/canteens/${canteen._id}`, { requestPasswordOtp: true });
+      if (res.data.data?.devOtp) setDevOtp(res.data.data.devOtp);
+      setStep(2);
+    } catch (e2) {
+      setErr(getErrorMessage(e2, 'Could not send the verification code.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function confirmChange(e) {
+    e.preventDefault();
+    if (!/^\d{6}$/.test(otp.trim())) return setErr('Enter the 6-digit code emailed to the sub-admin.');
+    setBusy(true);
+    setErr('');
+    try {
+      const res = await api.put(`/canteens/${canteen._id}`, {
+        adminPassword: newPw,
+        adminOtp: otp.trim(),
+      });
+      toast.success(res.data.message);
+      onClose();
+    } catch (e2) {
+      setErr(getErrorMessage(e2, 'Could not change the password.'));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="modal-box" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+        <h3>🔐 Change password — {canteen.name}</h3>
+
+        {err && (
+          <p className="field-error" style={{ marginTop: 10 }}>
+            {err}
+          </p>
+        )}
+
+        {step === 1 ? (
+          <form onSubmit={sendOtp}>
+            <div className="form-group">
+              <label htmlFor="rp-new">New Password</label>
+              <input
+                id="rp-new"
+                type="text"
+                placeholder="At least 6 characters"
+                value={newPw}
+                onChange={(e) => setNewPw(e.target.value)}
+                autoFocus
+              />
+              <small className="hint">
+                Step 1 of 2 — a confirmation code will be emailed to the sub-admin.
+              </small>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-ghost" onClick={onClose} disabled={busy}>
+                Cancel
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={busy}>
+                {busy ? 'Sending code...' : 'Send Code & Continue'}
+              </button>
+            </div>
+          </form>
+        ) : (
+          <form onSubmit={confirmChange}>
+            {devOtp && (
+              <div className="demo-otp-box">
+                <strong>Demo mode</strong> (no SMTP configured) — code: <code>{devOtp}</code>
+              </div>
+            )}
+            <div className="form-group">
+              <label htmlFor="rp-otp">Verification Code</label>
+              <input
+                id="rp-otp"
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                placeholder="6-digit code from sub-admin's email"
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                autoFocus
+              />
+              <small className="hint">
+                Step 2 of 2 — ask the canteen admin for the code they received by email.
+              </small>
+            </div>
+            <div className="modal-actions">
+              <button type="button" className="btn btn-ghost" onClick={() => setStep(1)} disabled={busy}>
+                ← Back
+              </button>
+              <button type="submit" className="btn btn-primary" disabled={busy}>
+                {busy ? 'Changing...' : 'Confirm Change'}
+              </button>
+            </div>
+          </form>
+        )}
+      </div>
     </div>
   );
 }
