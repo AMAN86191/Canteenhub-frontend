@@ -1,23 +1,18 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import api, { getErrorMessage } from '../services/api';
 import { useToast } from './ToastContext';
+import { clearSession, getToken, getUser, saveSession, saveUser } from '../utils/session';
 
 const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('ch_user')) || null;
-    } catch {
-      return null;
-    }
-  });
-  const [initializing, setInitializing] = useState(() => Boolean(localStorage.getItem('ch_token')));
+  const [user, setUser] = useState(() => getUser());
+  const [initializing, setInitializing] = useState(() => Boolean(getToken()));
   const toast = useToast();
 
   // Validate the persisted token on first load
   useEffect(() => {
-    const token = localStorage.getItem('ch_token');
+    const token = getToken();
     if (!token) return;
     let cancelled = false;
     (async () => {
@@ -37,8 +32,7 @@ export function AuthProvider({ children }) {
   }, []);
 
   const persist = useCallback((userData, token) => {
-    localStorage.setItem('ch_token', token);
-    localStorage.setItem('ch_user', JSON.stringify(userData));
+    saveSession(userData, token);
     setUser(userData);
   }, []);
 
@@ -96,21 +90,17 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(
     (notify = true) => {
-      localStorage.removeItem('ch_token');
-      localStorage.removeItem('ch_user');
+      clearSession();
       setUser(null);
       if (notify) toast.info('You have been logged out.');
     },
     [toast]
   );
 
-  const updateStoredUser = useCallback(
-    (userData) => {
-      localStorage.setItem('ch_user', JSON.stringify(userData));
-      setUser(userData);
-    },
-    []
-  );
+  const updateStoredUser = useCallback((userData) => {
+    saveUser(userData);
+    setUser(userData);
+  }, []);
 
   const value = useMemo(
     () => ({ user, initializing, login, register, verifyRegistration, logout, updateStoredUser }),

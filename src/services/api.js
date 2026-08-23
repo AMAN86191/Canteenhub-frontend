@@ -1,13 +1,14 @@
 import axios from 'axios';
+import { clearSession, getToken, getUser } from '../utils/session';
 
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
   timeout: 20000,
 });
 
-// Attach JWT token automatically
+// Attach the per-tab JWT automatically
 api.interceptors.request.use((config) => {
-  const token = localStorage.getItem('ch_token');
+  const token = getToken();
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
@@ -19,11 +20,12 @@ api.interceptors.response.use(
     const status = error.response?.status;
     const url = error.config?.url || '';
     const isAuthCall = url.includes('/auth/login') || url.includes('/auth/register');
-    if ((status === 401 || status === 403) && !isAuthCall && localStorage.getItem('ch_token')) {
-      localStorage.removeItem('ch_token');
-      localStorage.removeItem('ch_user');
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+    if ((status === 401 || status === 403) && !isAuthCall && getToken()) {
+      const role = getUser()?.role;
+      const loginPath = ['admin', 'superadmin'].includes(role) ? '/admin/login' : '/login';
+      clearSession();
+      if (!window.location.pathname.startsWith(loginPath)) {
+        window.location.href = loginPath;
       }
     }
     return Promise.reject(error);

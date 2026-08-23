@@ -325,6 +325,7 @@ export default function AdminCanteens() {
                 <th>Students</th>
                 <th>Products</th>
                 <th>Orders</th>
+                <th>Plan</th>
                 <th>Status</th>
                 <th>Actions</th>
               </tr>
@@ -346,6 +347,20 @@ export default function AdminCanteens() {
                   <td>{canteen.users ?? 0}</td>
                   <td>{canteen.products ?? 0}</td>
                   <td>{canteen.orders ?? 0}</td>
+                  <td>
+                    {canteen.subscription ? (
+                      <>
+                        <span className="plan-chip">{canteen.subscription.name}</span>
+                        {canteen.subscription.status === 'expired' && (
+                          <span className="pending-chip" title="Plan expired">
+                            Expired
+                          </span>
+                        )}
+                      </>
+                    ) : (
+                      <span className="muted">—</span>
+                    )}
+                  </td>
                   <td>
                     <span className={`role-chip ${canteen.isActive ? 'active-chip' : 'blocked-chip'}`}>
                       {canteen.isActive ? 'Active' : 'Inactive'}

@@ -38,7 +38,7 @@ function sanitize(list) {
 
 function loadCart() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
+    const raw = sessionStorage.getItem(STORAGE_KEY);
     const parsed = raw ? JSON.parse(raw) : [];
     return sanitize(parsed);
   } catch {
@@ -73,9 +73,9 @@ export function CartProvider({ children }) {
     });
   }, [myCanteenId]);
 
-  // Persist cart across refreshes
+  // Persist cart across refreshes (per browser tab, so tabs never share carts)
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    sessionStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items]);
 
   /**

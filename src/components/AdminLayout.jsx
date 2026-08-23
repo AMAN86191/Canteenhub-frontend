@@ -11,10 +11,14 @@ const LINKS = [
   { to: '/admin/profile', label: 'My Profile', icon: '🪪' },
 ];
 
+// Canteen admins manage their own subscription here.
+const CANTEEN_LINKS = [{ to: '/admin/plan', label: 'My Plan', icon: '💳' }];
+
 // Only the platform owner sees canteen management.
 const SUPER_LINKS = [
   { to: '/admin/canteens', label: 'Canteens', icon: '🏪' },
   { to: '/admin/colleges', label: 'Colleges', icon: '🎓' },
+  { to: '/admin/plans', label: 'Plans', icon: '💳' },
 ];
 
 // Legacy accounts keep role "admin" and get full platform access.
@@ -59,6 +63,23 @@ export default function AdminLayout({ children }) {
               {link.label}
             </NavLink>
           ))}
+          {!isSuperAdminRole(user?.role) && (
+            <>
+              <p className="sidebar-label">Subscription</p>
+              {CANTEEN_LINKS.map((link) => (
+                <NavLink
+                  key={link.to}
+                  to={link.to}
+                  end={link.end}
+                  className={({ isActive }) => `sidebar-link${isActive ? ' active' : ''}`}
+                  onClick={() => setOpen(false)}
+                >
+                  <span className="sidebar-link-icon">{link.icon}</span>
+                  {link.label}
+                </NavLink>
+              ))}
+            </>
+          )}
           {isSuperAdminRole(user?.role) && (
             <>
               <p className="sidebar-label">Platform</p>

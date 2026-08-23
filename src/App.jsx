@@ -20,6 +20,7 @@ import NotFound from './pages/NotFound';
 
 import Dashboard from './pages/admin/Dashboard';
 import AdminLogin from './pages/admin/AdminLogin';
+import MyPlan from './pages/admin/MyPlan';
 import AdminProductDetails from './pages/admin/AdminProductDetails';
 import AdminProducts from './pages/admin/AdminProducts';
 import ProductForm from './pages/admin/ProductForm';
@@ -30,6 +31,7 @@ import AdminUsers from './pages/admin/AdminUsers';
 import AdminCanteens from './pages/admin/AdminCanteens';
 import AdminCanteenDetails from './pages/admin/AdminCanteenDetails';
 import AdminColleges from './pages/admin/AdminColleges';
+import AdminPlans from './pages/admin/AdminPlans';
 import AdminProfile from './pages/admin/AdminProfile';
 
 function ScrollToTop() {
@@ -132,6 +134,7 @@ export default function App() {
                 <Routes>
                   <Route index element={<Dashboard />} />
                   <Route path="dashboard" element={<Dashboard />} />
+                  <Route path="plan" element={<MyPlan />} />
                   <Route path="products" element={<AdminProducts />} />
                   <Route path="products/add" element={<ProductForm />} />
                   <Route path="products/edit/:id" element={<ProductForm />} />
@@ -144,6 +147,7 @@ export default function App() {
                   <Route path="canteens" element={<AdminCanteens />} />
                   <Route path="canteens/:id" element={<AdminCanteenDetails />} />
                   <Route path="colleges" element={<AdminColleges />} />
+                  <Route path="plans" element={<AdminPlans />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>
               </AdminLayout>

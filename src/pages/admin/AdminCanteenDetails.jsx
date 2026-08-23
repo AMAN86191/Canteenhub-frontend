@@ -5,12 +5,19 @@ import Loader from '../../components/Loader';
 import EmptyState from '../../components/EmptyState';
 import { formatCurrency, formatDateTime } from '../../utils/format';
 import OrderStatusBadge from '../../components/OrderStatusBadge';
+import { useToast } from '../../context/ToastContext';
 
 export default function AdminCanteenDetails() {
   const { id } = useParams();
+  const toast = useToast();
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  // Change-plan dialog state
+  const [showPlanDialog, setShowPlanDialog] = useState(false);
+  const [plans, setPlans] = useState([]);
+  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [paying, setPaying] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -25,10 +32,44 @@ export default function AdminCanteenDetails() {
     })();
   }, [id]);
 
+  async function openPlanDialog() {
+    setShowPlanDialog(true);
+    setSelectedPlan(null);
+    try {
+      const res = await api.get('/plans');
+      setPlans(res.data.data.plans);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Could not load plans.'));
+    }
+  }
+
+  async function confirmSubscribe() {
+    if (!selectedPlan) return;
+    const label =
+      selectedPlan.price > 0
+        ? `Simulated payment of Rs ${selectedPlan.price} for the ${selectedPlan.name} plan (${selectedPlan.durationDays} days). Continue?`
+        : `Move "${data.canteen.name}" to the Free plan?`;
+    if (!window.confirm(label)) return;
+
+    setPaying(true);
+    try {
+      const res = await api.post(`/canteens/${id}/subscribe`, { planId: selectedPlan._id });
+      toast.success(res.data.message);
+      setShowPlanDialog(false);
+      const fresh = await api.get(`/canteens/${id}/stats`);
+      setData(fresh.data.data);
+    } catch (err) {
+      toast.error(getErrorMessage(err, 'Could not change the plan.'));
+    } finally {
+      setPaying(false);
+    }
+  }
+
   if (loading) return <Loader label="Loading canteen details..." full />;
   if (error) return <EmptyState icon="⚠️" title="Could not load canteen" message={error} />;
 
   const { canteen, stats, recentOrders, subAdmins, topItems, categories, products } = data;
+  const sub = data.subscription;
 
   return (
     <div className="admin-page">
@@ -77,6 +118,30 @@ export default function AdminCanteenDetails() {
             <code className="info-code">{canteen._id}</code>
           </div>
         </div>
+
+        {/* Subscription strip */}
+        {sub && (
+          <div className={`plan-strip ${sub.status === 'expired' ? 'plan-expired' : ''}`}>
+            <div className="plan-strip-info">
+              <strong>💳 Plan: {sub.name}</strong>
+              <span>
+                {sub.slug === 'free'
+                  ? 'No expiry — free forever'
+                  : sub.status === 'active'
+                    ? `Valid till ${formatDateTime(sub.expiresAt)}`
+                    : 'Expired — renew to keep adding items'}
+              </span>
+            </div>
+            <div className="plan-strip-actions">
+              <span className={`role-chip ${sub.status === 'active' ? 'active-chip' : 'blocked-chip'}`}>
+                {sub.status === 'active' ? 'Active' : 'Expired'}
+              </span>
+              <button type="button" className="btn btn-primary btn-sm" onClick={openPlanDialog}>
+                Change / Renew Plan
+              </button>
+            </div>
+          </div>
+        )}
       </section>
 
       {/* KPI grid */}
@@ -285,6 +350,69 @@ export default function AdminCanteenDetails() {
           </div>
         )}
       </section>
+
+      {/* Change / renew subscription plan dialog */}
+      {showPlanDialog && (
+        <div className="modal-overlay" onClick={() => setShowPlanDialog(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()} role="dialog" aria-modal="true">
+            <h3>💳 Change Plan — {canteen.name}</h3>
+            <p className="muted" style={{ marginBottom: 14 }}>
+              Pick a plan for this canteen. Payments are simulated (demo mode) — the subscription
+              activates instantly.
+            </p>
+
+            {plans.length === 0 ? (
+              <p className="muted">Loading plans...</p>
+            ) : (
+              <div className="plan-pick-list">
+                {plans.map((p) => {
+                  const current = sub?.planId === p._id;
+                  return (
+                    <label key={p._id} className={`plan-pick ${selectedPlan?._id === p._id ? 'selected' : ''}`}>
+                      <input
+                        type="radio"
+                        name="plan"
+                        checked={selectedPlan?._id === p._id}
+                        onChange={() => setSelectedPlan(p)}
+                      />
+                      <span className="plan-pick-name">
+                        <strong>{p.name}</strong>
+                        <small>
+                          {p.limits?.maxProducts === -1 ? 'Unlimited' : p.limits?.maxProducts} products ·{' '}
+                          {p.limits?.maxCategories === -1 ? 'Unlimited' : p.limits?.maxCategories} categories ·{' '}
+                          {p.durationDays}d
+                        </small>
+                      </span>
+                      <span className="plan-pick-price">
+                        {formatCurrency(p.price)}
+                        {current && <em className="current-tag">current</em>}
+                      </span>
+                    </label>
+                  );
+                })}
+              </div>
+            )}
+
+            <div className="modal-actions">
+              <button type="button" className="btn btn-ghost" onClick={() => setShowPlanDialog(false)} disabled={paying}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="btn btn-primary"
+                onClick={confirmSubscribe}
+                disabled={!selectedPlan || paying}
+              >
+                {paying
+                  ? 'Processing...'
+                  : selectedPlan && selectedPlan.price > 0
+                    ? `Pay Rs ${selectedPlan.price} (Demo)`
+                    : 'Switch to Free'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

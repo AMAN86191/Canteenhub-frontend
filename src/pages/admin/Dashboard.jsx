@@ -17,6 +17,29 @@ const CANTEEN_CARDS = [
   ['completedOrders', 'Completed Orders', '✅', 'green'],
 ];
 
+/** Horizontal usage meter for plan limits. */
+function UsageMeter({ label, used, max }) {
+  const unlimited = max === -1 || max === undefined;
+  const pct = unlimited ? 0 : Math.min(100, Math.round((used / max) * 100));
+  const nearLimit = !unlimited && pct >= 80;
+  return (
+    <div className="usage-meter">
+      <div className="usage-meter-top">
+        <span>{label}</span>
+        <span className={nearLimit ? 'usage-warn' : ''}>
+          {used} / {unlimited ? '∞' : max}
+        </span>
+      </div>
+      <div className="usage-bar">
+        <div
+          className={`usage-fill ${unlimited ? '' : nearLimit ? 'warn' : ''}`}
+          style={{ width: `${unlimited ? 100 : pct}%` }}
+        />
+      </div>
+    </div>
+  );
+}
+
 export default function Dashboard() {
   const { user } = useAuth();
   const [data, setData] = useState(null);
@@ -43,6 +66,9 @@ export default function Dashboard() {
     return <EmptyState icon="⚠️" title="Could not load dashboard" message={error} />;
 
   const { stats, platform, recentOrders } = data;
+  const sub = !isSuper ? data.subscription : null;
+
+  const usagePct = (used, max) => (max === -1 ? null : Math.min(100, Math.round((used / max) * 100)));
 
   return (
     <div className="admin-page">
@@ -52,6 +78,52 @@ export default function Dashboard() {
           ? `Live overview of every college & canteen on CanteenHub.`
           : 'Live overview of your canteen.'}
       </p>
+
+      {/* Subscription status for canteen admins */}
+      {sub && (
+        <section className={`card section-card sub-card ${sub.status === 'expired' ? 'sub-expired' : ''}`}>
+          {sub.status === 'expired' ? (
+            <div className="sub-banner">
+              <strong>⚠️ Your "{sub.name}" plan has expired.</strong>
+              <span>
+                You can still manage existing items and orders, but adding new products or
+                categories is locked.
+              </span>
+              <Link to="/admin/plan" className="btn btn-primary btn-sm">
+                Renew / Upgrade Now →
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="sub-head">
+                <h3>💳 {sub.name} Plan</h3>
+                <span className="muted">
+                  {sub.slug === 'free'
+                    ? 'Free forever'
+                    : `Renews / expires ${formatDateTime(sub.expiresAt)}`}
+                </span>
+              </div>
+              <div className="usage-row">
+                <UsageMeter
+                  label="🍔 Products"
+                  used={sub.usage?.products ?? stats.totalProducts}
+                  max={sub.maxProducts}
+                />
+                <UsageMeter
+                  label="🗂️ Categories"
+                  used={sub.usage?.categories ?? stats.totalCategories}
+                  max={sub.maxCategories}
+                />
+                {usagePct(sub.usage?.products ?? stats.totalProducts, sub.maxProducts) !== null && (
+                  <span className="muted sub-hint">
+                    Reach a limit? <Link to="/admin/plan">Upgrade your plan →</Link>
+                  </span>
+                )}
+              </div>
+            </>
+          )}
+        </section>
+      )}
 
       {isSuper ? (
         <>
